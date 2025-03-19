@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build all",
+      "type": "shell",
+      "command": "clear; swift build --build-tests -Xswiftc -diagnostic-style=llvm",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Format and lint all files",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/swiftformat -v .; /opt/homebrew/bin/swiftlint",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format and lint current file",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/swiftformat ${file} -v; /opt/homebrew/bin/swiftlint ${file}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format current file",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/swiftformat -v ${file}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint current file",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/swiftlint ${file}",
+      "problemMatcher": []
+    }
+  ]
+}

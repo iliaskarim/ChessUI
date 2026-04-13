@@ -1,5 +1,6 @@
 --swiftversion 5.10
 --disable blankLinesAroundMark
+--disable blankLinesBetweenChainedFunctions
 --disable preferForLoop
 --disable wrapMultilineStatementBraces
 --commas inline

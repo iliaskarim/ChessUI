@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PressAction: ViewModifier {
   var onPress: () -> Void
+
   var onRelease: (() -> Void)?
 
   func body(content: Content) -> some View {

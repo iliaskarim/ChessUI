@@ -3,7 +3,7 @@ import XCTest
 
 final class ChessUITests: XCTestCase {
   func testChessUI() {
-    let chessUI = ChessUI()
+    let chessUI = ChessView()
 
     assertSnapshot(chessUI)
   }

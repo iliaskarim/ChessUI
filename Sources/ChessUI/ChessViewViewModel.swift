@@ -2,7 +2,7 @@ import ChessCore
 import Combine
 import SwiftUI
 
-class ViewModel: ObservableObject {
+final class ChessViewViewModel: ObservableObject {
   @ObservedObject private(set) var game: Game
 
   @AppStorage("flipBoard")

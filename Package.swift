@@ -17,7 +17,7 @@ let package = Package(
     )
   ],
   dependencies: [
-    .package(path: "../../GitHub/ChessCore"),
+    .package(url: "https://github.com/iliaskarim/ChessCore.git", branch: "develop"),
     .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.12.0")
   ],
   targets: [
@@ -29,7 +29,7 @@ let package = Package(
         "ChessCore"
       ],
       resources: [
-        .process("Resources")
+        .process("Assets.xcassets")
       ]
     ),
     .testTarget(

@@ -1,0 +1,15 @@
+{
+  "originHash" : "ceee0137bd946a7db7757777398c9fff9ba922b40637d4fc6896fc5535daeb86",
+  "pins" : [
+    {
+      "identity" : "chesscore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/iliaskarim/ChessCore.git",
+      "state" : {
+        "branch" : "develop",
+        "revision" : "13e5933e1d82403b3e6cdfb5e3a8f532e0d048dd"
+      }
+    }
+  ],
+  "version" : 3
+}

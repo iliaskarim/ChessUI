@@ -27,16 +27,16 @@ struct ChessBoard: View {
     }
     .confirmationDialog("Promotion", isPresented: $showPromotionDialog) {
       Button("Promote pawn to queen") {
-        try! game.play(promotions!.promotion(figure: .queen)!)
+        play(promotions!.promotion(figure: .queen)!, isCapture: isPromotionCapture)
       }
       Button("Promote pawn to bishop") {
-        try! game.play(promotions!.promotion(figure: .bishop)!)
+        play(promotions!.promotion(figure: .bishop)!, isCapture: isPromotionCapture)
       }
       Button("Promote pawn to knight") {
-        try! game.play(promotions!.promotion(figure: .knight)!)
+        play(promotions!.promotion(figure: .knight)!, isCapture: isPromotionCapture)
       }
       Button("Promote pawn to rook") {
-        try! game.play(promotions!.promotion(figure: .rook)!)
+        play(promotions!.promotion(figure: .rook)!, isCapture: isPromotionCapture)
       }
     }
   }
@@ -61,6 +61,8 @@ struct ChessBoard: View {
   @Binding private var isBoardFlipped: Bool
 
   @Binding private var isBoardLabeled: Bool
+
+  @State private var isPromotionCapture = false
 
   @State private var promotions: [Move]?
 
@@ -106,6 +108,20 @@ struct ChessBoard: View {
     _isBoardLabeled = isBoardLabeled
   }
 
+  private func play(_ move: Move, isCapture: Bool) {
+    try! game.play(move)
+
+    if game.board.status != nil {
+      SoundManager.shared.playPop8()
+    } else if isCapture {
+      SoundManager.shared.playPop7()
+    } else {
+      SoundManager.shared.playPop3()
+    }
+
+    selection = nil
+  }
+
   private func square(i: Int, j: Int) -> some View {
     let file: Square.File = isBoardFlipped ? .allCases[7 - j] : .allCases[j]
     let rank: Square.Rank = isBoardFlipped ? .allCases[i] : .allCases[7 - i]
@@ -127,11 +143,11 @@ struct ChessBoard: View {
         } else if let plays = plays?[square] {
           if plays.count > 1 {
             promotions = plays
+            isPromotionCapture = piece != nil
             showPromotionDialog = true
           } else {
-            try! game.play(plays.first!)
+            play(plays.first!, isCapture: piece != nil)
           }
-          selection = nil
         } else {
           selection = nil
         }

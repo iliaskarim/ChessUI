@@ -6,6 +6,7 @@ struct ChessUIDemoApp: App {
   var body: some Scene {
     WindowGroup {
       ChessView()
+        .tint(.primary)
     }
   }
 }

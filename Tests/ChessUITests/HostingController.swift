@@ -1,13 +1,13 @@
 #if os(iOS)
-  import SwiftUI
-  import UIKit
+import SwiftUI
+import UIKit
 
-  public typealias HostingController = UIHostingController
+public typealias HostingController = UIHostingController
 #elseif os(macOS)
-  import AppKit
-  import SwiftUI
+import AppKit
+import SwiftUI
 
-  public typealias HostingController = NSHostingController
+public typealias HostingController = NSHostingController
 #endif
 
 import SnapshotTesting

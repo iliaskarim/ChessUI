@@ -40,7 +40,6 @@ public struct ChessView: View {
     }
     .fixedSize(horizontal: true, vertical: false)
     .padding()
-
     // MENU DIALOG
     .confirmationDialog("Menu", isPresented: $showMenuDialog) {
       // FLIP BOARD

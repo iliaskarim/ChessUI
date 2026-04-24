@@ -16,6 +16,14 @@ final class SoundManager {
     play("Pop 8 by DSG", ext: "flac")
   }
 
+  func playTrumpetFanfare() {
+    play("Trumpet Fanfare by Bevibeldesign", ext: "aiff")
+  }
+
+  func playWahWahSadTrombone() {
+    play("Wah Wah Sad Trombone by kirbydx", ext: "wav")
+  }
+
   private init() {}
 
   private var player: AVAudioPlayer?

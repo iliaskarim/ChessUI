@@ -111,12 +111,21 @@ struct ChessBoard: View {
   private func play(_ move: Move, isCapture: Bool) {
     try! game.play(move)
 
-    if game.board.status != nil {
-      SoundManager.shared.playPop8()
-    } else if isCapture {
-      SoundManager.shared.playPop7()
-    } else {
-      SoundManager.shared.playPop3()
+    switch game.status {
+    case .winner:
+      SoundManager.shared.playTrumpetFanfare()
+
+    case .draw:
+      SoundManager.shared.playWahWahSadTrombone()
+
+    case .toMove:
+      if game.board.status != nil {
+        SoundManager.shared.playPop8()
+      } else if isCapture {
+        SoundManager.shared.playPop7()
+      } else {
+        SoundManager.shared.playPop3()
+      }
     }
 
     selection = nil

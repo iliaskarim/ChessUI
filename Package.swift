@@ -32,7 +32,9 @@ let package = Package(
         .process("Assets.xcassets"),
         .copy("Pop 3 by DSG.flac"),
         .copy("Pop 7 by DSG.flac"),
-        .copy("Pop 8 by DSG.flac")
+        .copy("Pop 8 by DSG.flac"),
+        .copy("Trumpet Fanfare by Bevibeldesign.aiff"),
+        .copy("Wah Wah Sad Trombone by kirbydx.wav")
       ]
     ),
     .testTarget(

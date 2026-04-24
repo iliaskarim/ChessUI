@@ -45,7 +45,11 @@ final class SoundManager {
   private var player: AVAudioPlayer?
 
   private func play(_ name: String, ext: String, volume: Float = 1) {
-    guard let url = Bundle.module.url(forResource: name, withExtension: ext) else {
+    let url =
+      Bundle.module.url(forResource: name, withExtension: ext)
+      ?? Bundle.module.url(forResource: name, withExtension: ext, subdirectory: "Sounds")
+
+    guard let url else {
       print("Sound file not found: \(name).\(ext)")
 #if DEBUG
       fatalError()

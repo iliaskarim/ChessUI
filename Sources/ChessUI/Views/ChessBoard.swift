@@ -120,7 +120,7 @@ struct ChessBoard: View {
 
     case .toMove:
       if game.board.status != nil {
-        SoundManager.shared.playPop8()
+        SoundManager.shared.playHitmarkerSoundEffect()
       } else if case .castle = move {
         SoundManager.shared.playPop7()
       } else if isCapture {

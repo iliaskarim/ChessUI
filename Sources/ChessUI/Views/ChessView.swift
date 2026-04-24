@@ -45,11 +45,17 @@ public struct ChessView: View {
       // FLIP BOARD
       Button("Flip board") {
         viewModel.isBoardFlipped.toggle()
+        SoundManager.shared.playWhoosh()
       }
 
       // TOGGLE LABELS
       Button(viewModel.isBoardLabeled ? "Hide labels" : "Show labels") {
         viewModel.isBoardLabeled.toggle()
+        if viewModel.isBoardLabeled {
+          SoundManager.shared.playKeypresssLoud()
+        } else {
+          SoundManager.shared.playKeypresssSoft()
+        }
       }
 
       if viewModel.game.isGameOver {

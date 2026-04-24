@@ -4,6 +4,14 @@ import AVFoundation
 final class SoundManager {
   static let shared = SoundManager()
 
+  func playKeypresssLoud() {
+    play("Audio 01 05 Keypress from shanecutrufello", ext: "wav", volume: 2)
+  }
+
+  func playKeypresssSoft() {
+    play("Audio 01 05 Keypress from shanecutrufello", ext: "wav")
+  }
+
   func playPop3() {
     play("Pop 3 by DSG", ext: "flac")
   }
@@ -24,11 +32,15 @@ final class SoundManager {
     play("Wah Wah Sad Trombone by kirbydx", ext: "wav")
   }
 
+  func playWhoosh() {
+    play("Whoosh by qubodup", ext: "flac")
+  }
+
   private init() {}
 
   private var player: AVAudioPlayer?
 
-  private func play(_ name: String, ext: String) {
+  private func play(_ name: String, ext: String, volume: Float = 1) {
     guard let url = Bundle.module.url(forResource: name, withExtension: ext) else {
       print("Sound file not found: \(name).\(ext)")
 #if DEBUG
@@ -40,6 +52,7 @@ final class SoundManager {
 
     do {
       player = try AVAudioPlayer(contentsOf: url)
+      player?.volume = volume
       player?.prepareToPlay()
       player?.play()
     } catch {

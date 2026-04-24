@@ -12,15 +12,19 @@ struct DarkModePickerMenu: View {
       switch userInterfaceStyleBinding.wrappedValue {
       case .dark:
         Image(systemName: "moon")
+          .font(.callout)
 
       case .light:
         Image(systemName: "sun.max")
+          .font(.callout)
 
       case .unspecified:
         Image(systemName: colorScheme == .dark ? "moon" : "sun.max")
+          .font(.callout)
 
       @unknown default:
         Image(systemName: colorScheme == .dark ? "moon" : "sun.max")
+          .font(.callout)
       }
     }
   }

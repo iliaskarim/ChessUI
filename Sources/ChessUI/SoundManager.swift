@@ -4,6 +4,10 @@ import AVFoundation
 final class SoundManager {
   static let shared = SoundManager()
 
+  func playHitmarkerSoundEffect() {
+    play("Hitmarker Sound Effect by aruscio28", ext: "mp3", volume: 0.1)
+  }
+
   func playKeypresssLoud() {
     play("Audio 01 05 Keypress from shanecutrufello", ext: "wav", volume: 2)
   }
@@ -22,10 +26,6 @@ final class SoundManager {
 
   func playPop7() {
     play("Pop 7 by DSG", ext: "flac")
-  }
-
-  func playPop8() {
-    play("Pop 8 by DSG", ext: "flac")
   }
 
   func playTrumpetFanfare() {

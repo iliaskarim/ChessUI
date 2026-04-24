@@ -30,11 +30,13 @@ let package = Package(
       ],
       resources: [
         .process("Assets.xcassets"),
+        .copy("Audio 01 05 Keypress from shanecutrufello.wav"),
         .copy("Pop 3 by DSG.flac"),
         .copy("Pop 7 by DSG.flac"),
         .copy("Pop 8 by DSG.flac"),
         .copy("Trumpet Fanfare by Bevibeldesign.aiff"),
-        .copy("Wah Wah Sad Trombone by kirbydx.wav")
+        .copy("Wah Wah Sad Trombone by kirbydx.wav"),
+        .copy("Whoosh by qubodup.flac")
       ]
     ),
     .testTarget(

@@ -16,6 +16,10 @@ final class SoundManager {
     play("Pop 3 by DSG", ext: "flac")
   }
 
+  func playPop5() {
+    play("Pop 5 by DSG", ext: "flac", volume: 5)
+  }
+
   func playPop7() {
     play("Pop 7 by DSG", ext: "flac")
   }

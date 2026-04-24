@@ -121,6 +121,8 @@ struct ChessBoard: View {
     case .toMove:
       if game.board.status != nil {
         SoundManager.shared.playPop8()
+      } else if case .castle = move {
+        SoundManager.shared.playPop5()
       } else if isCapture {
         SoundManager.shared.playPop7()
       } else {

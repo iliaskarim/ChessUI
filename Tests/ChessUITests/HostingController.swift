@@ -11,6 +11,7 @@ public typealias HostingController = NSHostingController
 #endif
 
 import SnapshotTesting
+import XCTest
 
 func assertSnapshot(_ content: some View,
                     colorScheme: ColorScheme? = nil,
@@ -20,12 +21,14 @@ func assertSnapshot(_ content: some View,
                     file filePath: StaticString = #filePath,
                     testName: String = #function,
                     line: UInt = #line,
-                    column: UInt = #column) {
+                    column: UInt = #column) throws {
+#if os(macOS)
+  throw XCTSkip("Snapshots are recorded on the iOS simulator. Run `just test`.")
+#else
   if let colorScheme {
     let controller = HostingController(
       rootView: content.environment(\.colorScheme, colorScheme)
     )
-#if os(iOS)
     let style: UIUserInterfaceStyle = colorScheme == .dark ? .dark : .light
     controller.overrideUserInterfaceStyle = style
     assertSnapshot(of: controller,
@@ -37,18 +40,6 @@ func assertSnapshot(_ content: some View,
                    testName: testName,
                    line: line,
                    column: column)
-#elseif os(macOS)
-    controller.view.appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
-    assertSnapshot(of: controller,
-                   as: .image,
-                   record: recording,
-                   timeout: timeout,
-                   fileID: fileID,
-                   file: filePath,
-                   testName: testName,
-                   line: line,
-                   column: column)
-#endif
   } else {
     assertSnapshot(of: HostingController(rootView: content),
                    as: .image,
@@ -60,4 +51,5 @@ func assertSnapshot(_ content: some View,
                    line: line,
                    column: column)
   }
+#endif
 }

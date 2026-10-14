@@ -2,13 +2,13 @@ import XCTest
 @testable import ChessUI
 
 final class ChessUITests: XCTestCase {
-  func testChessUI() {
+  func testChessUI() throws {
     let chessUI = ChessView()
 
-    assertSnapshot(chessUI)
+    try assertSnapshot(chessUI)
   }
 
-  func testChessUIDarkMode() {
-    assertSnapshot(ChessView(), colorScheme: .dark)
+  func testChessUIDarkMode() throws {
+    try assertSnapshot(ChessView(), colorScheme: .dark)
   }
 }

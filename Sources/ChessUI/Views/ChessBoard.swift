@@ -151,6 +151,8 @@ struct ChessBoard: View {
 
         if let piece, piece.color == toMove {
           selection = square
+
+          SoundManager.shared.playButtonPressShort()
         } else if let plays = plays?[square] {
           if plays.count > 1 {
             promotions = plays
@@ -161,6 +163,8 @@ struct ChessBoard: View {
           }
         } else {
           selection = nil
+
+          SoundManager.shared.playButtonPressShort()
         }
       })
       .overlay {

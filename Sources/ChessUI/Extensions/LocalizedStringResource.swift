@@ -1,7 +1,4 @@
-//
-//  LocalizedStringResource'.swift
-//  ChessUI
-//
-//  Created by Ilias Karim on 5/12/26.
-//
-
+//import Foundation
+extension LocalizedStringResource {
+  static let string: Self = ""
+}

@@ -78,7 +78,21 @@ public struct ChessView: View {
     }
   }
 
-  @StateObject private var viewModel = ChessViewViewModel()
+  @StateObject private var viewModel = ChessViewViewModel(game: .init(board: [
+    .init(file: .a, rank: .one): .init(color: .white, figure: .king),
+    .init(file: .e, rank: .eight): .init(color: .black, figure: .king),
+    .init(file: .g, rank: .seven): .init(color: .white, figure: .pawn),
+    .init(file: .h, rank: .eight): .init(color: .black, figure: .rook),
+    .init(file: .a, rank: .eight): .init(color: .black, figure: .rook)
+  ]))
+
+//  @StateObject private var viewModel = ChessViewViewModel()
+
+//  @StateObject private var viewModel = ChessViewViewModel(game: .init(board: [
+//    .init(file: .e, rank: .five): .init(color: .white, figure: .king),
+//    .init(file: .e, rank: .eight): .init(color: .black, figure: .king),
+//    .init(file: .e, rank: .seven): .init(color: .white, figure: .pawn),
+//  ]))
 
   @State private var showForfeitDialog = false
 

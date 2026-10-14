@@ -9,7 +9,7 @@ struct ContentView: View {
           .frame(maxWidth: .infinity, maxHeight: .infinity)
           // Navigation toolbar reduces the content region; compensate so the board
           // stays visually centered in the full screen.
-          .offset(y: (UIScreen.main.bounds.midY - proxy.frame(in: .global).midY))
+          .offset(y: UIScreen.main.bounds.midY - proxy.frame(in: .global).midY)
       }
       .toolbar {
         ToolbarItem(placement: .topBarLeading) {

@@ -4,6 +4,10 @@ import AVFoundation
 final class SoundManager {
   static let shared = SoundManager()
 
+  func playButtonPressShort() {
+    play("Pop 8 by DSG", ext: "flac")
+  }
+  
   func playHitmarkerSoundEffect() {
     play("Hitmarker Sound Effect by aruscio28", ext: "mp3", volume: 0.1)
   }
@@ -47,7 +51,7 @@ final class SoundManager {
   private func play(_ name: String, ext: String, volume: Float = 1) {
     let url =
       Bundle.module.url(forResource: name, withExtension: ext)
-      ?? Bundle.module.url(forResource: name, withExtension: ext, subdirectory: "Sounds")
+        ?? Bundle.module.url(forResource: name, withExtension: ext, subdirectory: "Sounds")
 
     guard let url else {
       print("Sound file not found: \(name).\(ext)")

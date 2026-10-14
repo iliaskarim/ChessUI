@@ -7,4 +7,8 @@ final class ChessUITests: XCTestCase {
 
     assertSnapshot(chessUI)
   }
+
+  func testChessUIDarkMode() {
+    assertSnapshot(ChessView(), colorScheme: .dark)
+  }
 }

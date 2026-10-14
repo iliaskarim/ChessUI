@@ -17,7 +17,7 @@ let package = Package(
     )
   ],
   dependencies: [
-    .package(url: "https://github.com/iliaskarim/ChessCore.git", branch: "develop"),
+    .package(url: "https://github.com/iliaskarim/ChessCore.git", branch: "master"),
     .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.12.0")
   ],
   targets: [

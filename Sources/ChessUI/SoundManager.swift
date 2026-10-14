@@ -62,6 +62,8 @@ final class SoundManager {
 #endif
     }
 
+    configureSessionToMixWithOtherAudio()
+
     do {
       player = try AVAudioPlayer(contentsOf: url)
       player?.volume = volume
@@ -70,5 +72,22 @@ final class SoundManager {
     } catch {
       print("Failed to play sound: \(error)")
     }
+  }
+
+  private func configureSessionToMixWithOtherAudio() {
+#if os(iOS)
+    let session = AVAudioSession.sharedInstance()
+    let mixesWithOthers =
+      session.category == .ambient || session.categoryOptions.contains(.mixWithOthers)
+    guard !mixesWithOthers else { return }
+
+    do {
+      // Mix with other audio so these sounds do not pause Picture in Picture.
+      try session.setCategory(.ambient, mode: .default)
+      try session.setActive(true)
+    } catch {
+      print("Failed to configure audio session: \(error)")
+    }
+#endif
   }
 }

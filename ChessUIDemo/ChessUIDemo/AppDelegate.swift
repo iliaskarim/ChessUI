@@ -1,3 +1,4 @@
+#if os(iOS)
 import UIKit
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
@@ -14,3 +15,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     return config
   }
 }
+#elseif os(macOS)
+import AppKit
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+  func applicationDidFinishLaunching(_: Notification) {
+    AppSettingsStore.applyStoredInterfaceStyle()
+  }
+}
+#endif

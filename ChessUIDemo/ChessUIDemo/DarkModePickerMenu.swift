@@ -3,13 +3,15 @@ import SwiftUI
 struct DarkModePickerMenu: View {
   var body: some View {
     Menu {
-      Picker("Theme", selection: userInterfaceStyleBinding) {
-        Text("System").tag(UIUserInterfaceStyle.unspecified)
-        Text("Light").tag(UIUserInterfaceStyle.light)
-        Text("Dark").tag(UIUserInterfaceStyle.dark)
+      Picker("Theme", selection: themeBinding) {
+        Text("System").tag(Theme.system)
+        Text("Light").tag(Theme.light)
+        Text("Dark").tag(Theme.dark)
       }
+      .pickerStyle(.inline)
+      .labelsHidden()
     } label: {
-      switch userInterfaceStyleBinding.wrappedValue {
+      switch themeBinding.wrappedValue {
       case .dark:
         Image(systemName: "moon")
           .font(.callout)
@@ -18,11 +20,7 @@ struct DarkModePickerMenu: View {
         Image(systemName: "sun.max")
           .font(.callout)
 
-      case .unspecified:
-        Image(systemName: colorScheme == .dark ? "moon" : "sun.max")
-          .font(.callout)
-
-      @unknown default:
+      case .system:
         Image(systemName: colorScheme == .dark ? "moon" : "sun.max")
           .font(.callout)
       }
@@ -33,13 +31,13 @@ struct DarkModePickerMenu: View {
 
   @Environment(\.colorScheme) private var colorScheme
 
-  private var userInterfaceStyleBinding: Binding<UIUserInterfaceStyle> {
-    Binding<UIUserInterfaceStyle>(
+  private var themeBinding: Binding<Theme> {
+    Binding(
       get: {
-        appSettingsStore.userInterfaceStyle
+        appSettingsStore.theme
       },
       set: { newValue in
-        appSettingsStore.userInterfaceStyle = newValue
+        appSettingsStore.theme = newValue
       }
     )
   }

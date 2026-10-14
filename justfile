@@ -34,6 +34,17 @@ record mode="failed":
         -only-testing:ChessUITests \
         -skipPackagePluginValidation
 
+# `strict: true` in `.swiftlint.yml` already applies to lint and analyze.
+# SwiftLint ignores `--strict` when `--fix` is set.
+# Autocorrect SwiftLint violations, then format with SwiftFormat.
+lint:
+    swiftlint lint --fix .
+    swiftformat .
+
+# SwiftLint analyze (`scripts/swiftlint-analyze`: clean build-for-testing + analyze).
+analyze:
+    bash scripts/swiftlint-analyze
+
 # Use DESTINATION if set, otherwise a booted iPhone, otherwise an iPhone 17.
 [private]
 _destination:

@@ -1,16 +1,8 @@
-#if os(iOS)
-import SwiftUI
-import UIKit
-
-public typealias HostingController = UIHostingController
-#elseif os(macOS)
-import AppKit
-import SwiftUI
-
-public typealias HostingController = NSHostingController
-#endif
-
 import SnapshotTesting
+import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 import XCTest
 
 func assertSnapshot(_ content: some View,
@@ -26,7 +18,7 @@ func assertSnapshot(_ content: some View,
   throw XCTSkip("Snapshots are recorded on the iOS simulator. Run `just test`.")
 #else
   if let colorScheme {
-    let controller = HostingController(
+    let controller = UIHostingController(
       rootView: content.environment(\.colorScheme, colorScheme)
     )
     let style: UIUserInterfaceStyle = colorScheme == .dark ? .dark : .light
@@ -41,7 +33,7 @@ func assertSnapshot(_ content: some View,
                    line: line,
                    column: column)
   } else {
-    assertSnapshot(of: HostingController(rootView: content),
+    assertSnapshot(of: UIHostingController(rootView: content),
                    as: .image,
                    record: recording,
                    timeout: timeout,

@@ -34,9 +34,14 @@ final class AppSettingsStore: ObservableObject {
 #if os(iOS)
     let style: UIUserInterfaceStyle =
       switch theme {
-      case .system: .unspecified
-      case .light: .light
-      case .dark: .dark
+      case .system:
+        .unspecified
+
+      case .light:
+        .light
+
+      case .dark:
+        .dark
       }
     UIApplication.shared.connectedScenes
       .compactMap { $0 as? UIWindowScene }
@@ -47,9 +52,14 @@ final class AppSettingsStore: ObservableObject {
 #elseif os(macOS)
     let appearance: NSAppearance? =
       switch theme {
-      case .system: nil
-      case .light: NSAppearance(named: .aqua)
-      case .dark: NSAppearance(named: .darkAqua)
+      case .system:
+        nil
+
+      case .light:
+        NSAppearance(named: .aqua)
+
+      case .dark:
+        NSAppearance(named: .darkAqua)
       }
     NSApp.appearance = appearance
     NSApp.windows.forEach { $0.appearance = appearance }

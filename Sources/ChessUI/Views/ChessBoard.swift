@@ -100,8 +100,6 @@ struct ChessBoard: View {
     }
   }
 
-  @State private var showForfeitureConfirmation = false
-
   init(game: Game, isBoardFlipped: Binding<Bool>, isBoardLabeled: Binding<Bool>) {
     self.game = game
     _isBoardFlipped = isBoardFlipped

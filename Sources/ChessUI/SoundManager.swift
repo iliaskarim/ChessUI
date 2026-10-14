@@ -1,4 +1,4 @@
-import AVFoundation
+import AVFAudio
 
 @MainActor
 final class SoundManager {
@@ -7,7 +7,7 @@ final class SoundManager {
   func playButtonPressShort() {
     play("Pop 8 by DSG", ext: "flac")
   }
-  
+
   func playHitmarkerSoundEffect() {
     play("Hitmarker Sound Effect by aruscio28", ext: "mp3", volume: 0.1)
   }

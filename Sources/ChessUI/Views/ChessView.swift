@@ -1,5 +1,4 @@
 import ChessCore
-import Foundation
 import SwiftUI
 
 public struct ChessView: View {

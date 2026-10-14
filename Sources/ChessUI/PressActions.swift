@@ -12,7 +12,6 @@ struct PressAction: ViewModifier {
       }
       .onEnded { _ in
         onRelease?()
-      }
-    )
+      })
   }
 }

@@ -248,12 +248,13 @@ private struct BoardCrosshairCursorModifier: ViewModifier {
   private func updateCursor() {
     let showCrosshair = isPieceSelected && isPointerOverBoard
     if showCrosshair {
-      // Reapply on each move. A single push is cleared when AppKit updates cursor rects.
-      if isCrosshairPushed {
-        NSCursor.crosshair.set()
-      } else {
+      if !isCrosshairPushed {
         NSCursor.crosshair.push()
         isCrosshairPushed = true
+      } else if NSCursor.current != NSCursor.crosshair {
+        // A cursor rect replaces a pushed cursor without popping it.
+        // set() restores the crosshair. A second push would stick after pop().
+        NSCursor.crosshair.set()
       }
     } else if isCrosshairPushed {
       NSCursor.pop()

@@ -181,7 +181,7 @@ struct ChessBoard: View {
           return
         }
 
-        if let piece, piece.color == toMove {
+        if let piece, piece.color == toMove, !game.board.moves(from: square).isEmpty {
           if selection == square {
             deselect()
           } else {
@@ -197,9 +197,7 @@ struct ChessBoard: View {
           }
         } else {
           deselect()
-          if piece == nil {
-            SoundManager.shared.playButtonPressShort()
-          }
+          SoundManager.shared.playButtonPressShort()
         }
       })
       .overlay {

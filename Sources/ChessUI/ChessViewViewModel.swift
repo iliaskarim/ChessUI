@@ -13,12 +13,14 @@ final class ChessViewViewModel: ObservableObject {
 
   private var cancellables = Set<AnyCancellable>()
 
+  @MainActor
   func forfeitGame() {
     guard case let .toMove(toMove) = game.status else {
       return
     }
 
     try! game.endGame(victor: toMove.opposite)
+    SoundManager.shared.playTrumpetFanfare()
   }
 
   func newGame() {

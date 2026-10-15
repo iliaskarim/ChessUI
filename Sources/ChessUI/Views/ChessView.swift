@@ -89,3 +89,43 @@ public struct ChessView: View {
 #Preview {
   ChessView()
 }
+
+extension EnvironmentValues {
+  @Entry var chessBoardDeselectCount: Int = 0
+}
+
+public extension View {
+  func deselectChessPieceOnBackgroundTap() -> some View {
+    modifier(ChessPieceBackgroundDeselectModifier())
+  }
+}
+
+private struct ChessPieceBackgroundDeselectModifier: ViewModifier {
+  @State private var deselectCount = 0
+
+  @State private var isHandlingPress = false
+
+  func body(content: Content) -> some View {
+    ZStack {
+      Color.clear
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .modifier(PressAction(onPress: deselect, onRelease: endPress))
+      content
+    }
+    .environment(\.chessBoardDeselectCount, deselectCount)
+  }
+
+  private func deselect() {
+    guard !isHandlingPress else {
+      return
+    }
+
+    isHandlingPress = true
+    deselectCount += 1
+  }
+
+  private func endPress() {
+    isHandlingPress = false
+  }
+}

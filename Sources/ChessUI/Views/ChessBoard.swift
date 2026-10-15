@@ -39,6 +39,33 @@ struct ChessBoard: View {
         play(promotions!.promotion(figure: .rook)!, isCapture: isPromotionCapture)
       }
     }
+#if os(macOS)
+    .background {
+      // A click does not focus the board, so Escape is a shortcut rather than a key press.
+      Button {
+        guard selection != nil, !showPromotionDialog else {
+          return
+        }
+
+        deselect()
+      } label: {
+        EmptyView()
+      }
+      .keyboardShortcut(.cancelAction)
+      .disabled(selection == nil || showPromotionDialog)
+      .buttonStyle(.plain)
+      .opacity(0)
+      .allowsHitTesting(false)
+      .accessibilityHidden(true)
+    }
+#endif
+    .onChange(of: chessBoardDeselectCount) {
+      guard selection != nil, !showPromotionDialog else {
+        return
+      }
+
+      deselect()
+    }
   }
 
   private var fileLabels: some View {
@@ -61,6 +88,9 @@ struct ChessBoard: View {
   @Binding private var isBoardFlipped: Bool
 
   @Binding private var isBoardLabeled: Bool
+
+  @Environment(\.chessBoardDeselectCount)
+  private var chessBoardDeselectCount
 
   @State private var isPromotionCapture = false
 
@@ -131,6 +161,10 @@ struct ChessBoard: View {
     selection = nil
   }
 
+  private func deselect() {
+    selection = nil
+  }
+
   private func square(i: Int, j: Int) -> some View {
     let file: Square.File = isBoardFlipped ? .allCases[7 - j] : .allCases[j]
     let rank: Square.Rank = isBoardFlipped ? .allCases[i] : .allCases[7 - i]
@@ -148,7 +182,11 @@ struct ChessBoard: View {
         }
 
         if let piece, piece.color == toMove {
-          selection = square
+          if selection == square {
+            deselect()
+          } else {
+            selection = square
+          }
         } else if let plays = plays?[square] {
           if plays.count > 1 {
             promotions = plays
@@ -158,9 +196,10 @@ struct ChessBoard: View {
             play(plays.first!, isCapture: piece != nil)
           }
         } else {
-          selection = nil
-
-          SoundManager.shared.playButtonPressShort()
+          deselect()
+          if piece == nil {
+            SoundManager.shared.playButtonPressShort()
+          }
         }
       })
       .overlay {

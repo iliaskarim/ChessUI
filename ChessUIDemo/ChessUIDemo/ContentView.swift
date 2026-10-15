@@ -19,11 +19,14 @@ struct ContentView: View {
       ChessView()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Navigation toolbar reduces the content region; compensate so the board
-        // stays visually centered in the full screen.
+        // stays visually centered in the full screen. The deselect target stays
+        // in the content region so taps around the shifted board still land.
         .offset(y: UIScreen.main.bounds.midY - proxy.frame(in: .global).midY)
+        .deselectChessPieceOnBackgroundTap()
     }
 #else
     ChessView()
+      .deselectChessPieceOnBackgroundTap()
       .frame(maxWidth: .infinity, maxHeight: .infinity)
 #endif
   }

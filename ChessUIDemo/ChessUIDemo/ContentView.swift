@@ -20,19 +20,14 @@ struct ContentView: View {
     ChessView()
       // The toolbar shrinks the content region. Shift only the board so it
       // stays centered on the full screen, and leave the deselect target
-      // filling that region at its real size. Measure from the background:
-      // a GeometryReader or offset around the board sends the menu popover
-      // to the top of the screen instead of the ellipsis button.
+      // filling that region at its real size. Read this view's frame. A
+      // background GeometryReader reports the full screen instead, so the
+      // shift stays zero. A GeometryReader or offset around the board sends
+      // the menu popover to the top of the screen instead of the ellipsis.
       .deselectChessPieceOnBackgroundTap(verticalShift: boardShift)
-      .background {
-        GeometryReader { proxy in
-          Color.clear.preference(
-            key: BoardCenterShiftKey.self,
-            value: UIScreen.main.bounds.midY - proxy.frame(in: .global).midY
-          )
-        }
-      }
-      .onPreferenceChange(BoardCenterShiftKey.self) { boardShift = $0 }
+      .onGeometryChange(for: CGFloat.self) { proxy in
+        UIScreen.main.bounds.midY - proxy.frame(in: .global).midY
+      } action: { boardShift = $0 }
 #else
     ChessView()
       .deselectChessPieceOnBackgroundTap()
@@ -51,14 +46,6 @@ struct ContentView: View {
       DarkModePickerMenu()
     }
 #endif
-  }
-}
-
-private struct BoardCenterShiftKey: PreferenceKey {
-  static var defaultValue: CGFloat = 0
-
-  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-    value = nextValue()
   }
 }
 

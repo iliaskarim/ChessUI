@@ -1,5 +1,8 @@
 import ChessCore
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct ChessBoard: View {
   var body: some View {
@@ -12,14 +15,7 @@ struct ChessBoard: View {
       }
 
       VStack(spacing: 0) {
-        // BOARD GRID
-        ForEach(0 ..< 8) { i in
-          HStack(spacing: 0) {
-            ForEach(0 ..< 8) { j in
-              square(i: i, j: j, plays: plays)
-            }
-          }
-        }
+        boardGrid(plays: plays)
 
         // FILE LABELS
         if isBoardLabeled {
@@ -151,6 +147,21 @@ struct ChessBoard: View {
     selection = nil
   }
 
+  private func boardGrid(plays: [Square: [Move]]) -> some View {
+    VStack(spacing: 0) {
+      ForEach(0 ..< 8) { i in
+        HStack(spacing: 0) {
+          ForEach(0 ..< 8) { j in
+            square(i: i, j: j, plays: plays)
+          }
+        }
+      }
+    }
+#if os(macOS)
+    .modifier(BoardCrosshairCursorModifier(isPieceSelected: selection != nil))
+#endif
+  }
+
   private func square(i: Int, j: Int, plays: [Square: [Move]]) -> some View {
     let file: Square.File = isBoardFlipped ? .allCases[7 - j] : .allCases[j]
     let rank: Square.Rank = isBoardFlipped ? .allCases[i] : .allCases[7 - i]
@@ -202,6 +213,55 @@ struct ChessBoard: View {
       }
   }
 }
+
+#if os(macOS)
+/// Crosshair over the squares while a piece is selected. Labels keep the arrow.
+private struct BoardCrosshairCursorModifier: ViewModifier {
+  var isPieceSelected: Bool
+
+  @State private var isCrosshairPushed = false
+
+  @State private var isPointerOverBoard = false
+
+  func body(content: Content) -> some View {
+    content
+      .onContinuousHover { phase in
+        switch phase {
+        case .active:
+          isPointerOverBoard = true
+          updateCursor()
+
+        case .ended:
+          isPointerOverBoard = false
+          updateCursor()
+        }
+      }
+      .onChange(of: isPieceSelected) {
+        updateCursor()
+      }
+      .onDisappear {
+        isPointerOverBoard = false
+        updateCursor()
+      }
+  }
+
+  private func updateCursor() {
+    let showCrosshair = isPieceSelected && isPointerOverBoard
+    if showCrosshair {
+      // Reapply on each move. A single push is cleared when AppKit updates cursor rects.
+      if isCrosshairPushed {
+        NSCursor.crosshair.set()
+      } else {
+        NSCursor.crosshair.push()
+        isCrosshairPushed = true
+      }
+    } else if isCrosshairPushed {
+      NSCursor.pop()
+      isCrosshairPushed = false
+    }
+  }
+}
+#endif
 
 #Preview {
   @State var isBoardFlipped = false

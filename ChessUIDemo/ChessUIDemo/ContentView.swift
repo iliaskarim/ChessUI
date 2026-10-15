@@ -14,8 +14,7 @@ struct ContentView: View {
 
   @State private var boardShift: CGFloat = 0
 
-  @ViewBuilder
-  private var board: some View {
+  @ViewBuilder private var board: some View {
 #if os(iOS)
     ChessView()
       // The toolbar shrinks the content region. Shift only the board so it
@@ -35,8 +34,7 @@ struct ContentView: View {
 #endif
   }
 
-  @ToolbarContentBuilder
-  private var themeMenu: some ToolbarContent {
+  @ToolbarContentBuilder private var themeMenu: some ToolbarContent {
 #if os(iOS)
     ToolbarItem(placement: .topBarLeading) {
       DarkModePickerMenu()

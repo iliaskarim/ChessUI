@@ -29,7 +29,8 @@ struct DarkModePickerMenu: View {
 
   @EnvironmentObject private var appSettingsStore: AppSettingsStore
 
-  @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.colorScheme)
+  private var colorScheme
 
   private var themeBinding: Binding<Theme> {
     Binding(

@@ -1,5 +1,8 @@
 import ChessCore
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 public struct ChessView: View {
   public var body: some View {
@@ -100,20 +103,49 @@ public extension View {
   }
 }
 
+private struct DeselectHoleKey: PreferenceKey {
+  static var defaultValue: Anchor<CGRect>?
+
+  static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+    value = nextValue() ?? value
+  }
+}
+
 private struct ChessPieceBackgroundDeselectModifier: ViewModifier {
   @State private var deselectCount = 0
 
   @State private var isHandlingPress = false
 
   func body(content: Content) -> some View {
+#if os(iOS)
+    // UIKit skips Color.clear, so the catcher is a real view. It only accepts
+    // taps outside the chess view; the menu button and the pieces stay tappable.
+    content
+      .fixedSize()
+      .anchorPreference(key: DeselectHoleKey.self, value: .bounds) { $0 }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .backgroundPreferenceValue(DeselectHoleKey.self) { anchor in
+        GeometryReader { geo in
+          CatcherBacking(
+            hole: anchor.map { geo[$0] } ?? .null,
+            onPress: deselect,
+            onRelease: endPress
+          )
+        }
+      }
+      .environment(\.chessBoardDeselectCount, deselectCount)
+#else
     ZStack {
       Color.clear
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .modifier(PressAction(onPress: deselect, onRelease: endPress))
       content
+        .fixedSize()
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
     .environment(\.chessBoardDeselectCount, deselectCount)
+#endif
   }
 
   private func deselect() {
@@ -129,3 +161,69 @@ private struct ChessPieceBackgroundDeselectModifier: ViewModifier {
     isHandlingPress = false
   }
 }
+
+#if os(iOS)
+private struct CatcherBacking: UIViewRepresentable {
+  var hole: CGRect
+
+  var onPress: () -> Void
+
+  var onRelease: () -> Void
+
+  func makeUIView(context _: Context) -> PressView {
+    let view = PressView()
+    view.hole = hole
+    view.onPress = onPress
+    view.onRelease = onRelease
+    return view
+  }
+
+  func updateUIView(_ view: PressView, context _: Context) {
+    view.hole = hole
+    view.onPress = onPress
+    view.onRelease = onRelease
+  }
+
+  final class PressView: UIView {
+    var hole: CGRect = .null
+
+    var onPress: () -> Void = {}
+
+    var onRelease: () -> Void = {}
+
+    override init(frame: CGRect) {
+      super.init(frame: frame)
+      backgroundColor = .clear
+      isUserInteractionEnabled = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+      fatalError("init(coder:) has not been implemented")
+    }
+
+    override func point(inside point: CGPoint, with _: UIEvent?) -> Bool {
+      guard !hole.isNull, bounds.contains(point) else {
+        return false
+      }
+
+      return !hole.contains(point)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+      super.touchesBegan(touches, with: event)
+      onPress()
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+      super.touchesEnded(touches, with: event)
+      onRelease()
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+      super.touchesCancelled(touches, with: event)
+      onRelease()
+    }
+  }
+}
+#endif

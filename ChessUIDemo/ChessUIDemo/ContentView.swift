@@ -17,10 +17,9 @@ struct ContentView: View {
 #if os(iOS)
     GeometryReader { proxy in
       ChessView()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Navigation toolbar reduces the content region; compensate so the board
-        // stays visually centered in the full screen. The deselect target stays
-        // in the content region so taps around the shifted board still land.
+        // The toolbar shrinks the content region. Shift only the board so it
+        // stays centered on the full screen, and leave the deselect target
+        // filling that region at its real size.
         .offset(y: UIScreen.main.bounds.midY - proxy.frame(in: .global).midY)
         .deselectChessPieceOnBackgroundTap()
     }

@@ -38,46 +38,49 @@ public struct ChessView: View {
           Image(systemName: "ellipsis")
             .font(.caption)
         }
+        // Anchored to the button so the popover sits above the ellipsis.
+        .confirmationDialog("Menu", isPresented: $showMenuDialog) {
+          // FLIP BOARD
+          Button("Flip board") {
+            viewModel.isBoardFlipped.toggle()
+            SoundManager.shared.playWhoosh()
+          }
+
+          // TOGGLE LABELS
+          Button(viewModel.isBoardLabeled ? "Hide labels" : "Show labels") {
+            viewModel.isBoardLabeled.toggle()
+            if viewModel.isBoardLabeled {
+              SoundManager.shared.playKeypresssLoud()
+            } else {
+              SoundManager.shared.playKeypresssSoft()
+            }
+          }
+
+          if viewModel.game.isGameOver {
+            // NEW GAME
+            Button("New game") {
+              viewModel.newGame()
+            }
+          } else {
+            // FORFEIT GAME
+            Button("Forfeit game", role: .destructive) {
+              showForfeitDialog.toggle()
+            }
+          }
+        }
+        .confirmationDialog(
+          "End this game?",
+          isPresented: $showForfeitDialog,
+          titleVisibility: .visible
+        ) {
+          Button("Forfeit game", role: .destructive) {
+            viewModel.forfeitGame()
+          }
+        }
       }.padding(.horizontal, 2.0)
     }
     .fixedSize(horizontal: true, vertical: false)
     .padding()
-    // MENU DIALOG
-    .confirmationDialog("Menu", isPresented: $showMenuDialog) {
-      // FLIP BOARD
-      Button("Flip board") {
-        viewModel.isBoardFlipped.toggle()
-        SoundManager.shared.playWhoosh()
-      }
-
-      // TOGGLE LABELS
-      Button(viewModel.isBoardLabeled ? "Hide labels" : "Show labels") {
-        viewModel.isBoardLabeled.toggle()
-        if viewModel.isBoardLabeled {
-          SoundManager.shared.playKeypresssLoud()
-        } else {
-          SoundManager.shared.playKeypresssSoft()
-        }
-      }
-
-      if viewModel.game.isGameOver {
-        // NEW GAME
-        Button("New game") {
-          viewModel.newGame()
-        }
-      } else {
-        // FORFEIT GAME
-        Button("Forfeit game", role: .destructive) {
-          showForfeitDialog.toggle()
-        }
-      }
-    }
-    // FORFEIT DIALOG
-    .confirmationDialog("End this game?", isPresented: $showForfeitDialog, titleVisibility: .visible) {
-      Button("Forfeit game", role: .destructive) {
-        viewModel.forfeitGame()
-      }
-    }
   }
 
   @StateObject private var viewModel = ChessViewViewModel()
@@ -98,8 +101,22 @@ extension EnvironmentValues {
 }
 
 public extension View {
-  func deselectChessPieceOnBackgroundTap() -> some View {
-    modifier(ChessPieceBackgroundDeselectModifier())
+  /// `verticalShift` moves the board vertically inside the deselect target.
+  /// Positive is down, matching `offset(y:)`. The shift is layout, so the
+  /// menu popover stays on the ellipsis instead of the pre-shift frame.
+  func deselectChessPieceOnBackgroundTap(verticalShift: CGFloat = 0) -> some View {
+    modifier(ChessPieceBackgroundDeselectModifier(verticalShift: verticalShift))
+  }
+}
+
+private struct BoardVerticalShift: ViewModifier {
+  var shift: CGFloat
+
+  func body(content: Content) -> some View {
+    // A layout guide, not offset: popovers anchor to the laid-out frame.
+    content.alignmentGuide(VerticalAlignment.center) { dimensions in
+      dimensions[VerticalAlignment.center] - shift
+    }
   }
 }
 
@@ -112,6 +129,8 @@ private struct DeselectHoleKey: PreferenceKey {
 }
 
 private struct ChessPieceBackgroundDeselectModifier: ViewModifier {
+  var verticalShift: CGFloat = 0
+
   @State private var deselectCount = 0
 
   @State private var isHandlingPress = false
@@ -123,6 +142,7 @@ private struct ChessPieceBackgroundDeselectModifier: ViewModifier {
     content
       .fixedSize()
       .anchorPreference(key: DeselectHoleKey.self, value: .bounds) { $0 }
+      .modifier(BoardVerticalShift(shift: verticalShift))
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .backgroundPreferenceValue(DeselectHoleKey.self) { anchor in
         GeometryReader { geo in
@@ -143,6 +163,7 @@ private struct ChessPieceBackgroundDeselectModifier: ViewModifier {
       content
         .fixedSize()
     }
+    .modifier(BoardVerticalShift(shift: verticalShift))
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .environment(\.chessBoardDeselectCount, deselectCount)
 #endif

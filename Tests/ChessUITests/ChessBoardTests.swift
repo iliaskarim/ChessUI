@@ -1,4 +1,3 @@
-import ChessCore
 import SwiftUI
 import XCTest
 @testable import ChessUI
@@ -46,11 +45,11 @@ final class ChessBoardTests: XCTestCase {
 
   func testEPawnMoves() throws {
     try assertSnapshot(
+      selecting: "e2",
       ChessBoard(
         game: .init(),
         isBoardFlipped: .constant(false),
-        isBoardLabeled: .constant(false),
-        previewedSquare: .constant(Square(file: .e, rank: .two))
+        isBoardLabeled: .constant(false)
       )
     )
   }

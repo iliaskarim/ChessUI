@@ -168,35 +168,42 @@ struct ChessBoard: View {
     let square = Square(file: file, rank: rank)
     let piece = game.board[square]
 
+    let press = {
+      guard case let .toMove(toMove) = game.status else {
+        return
+      }
+
+      if let piece, piece.color == toMove, !game.board.moves(from: square).isEmpty {
+        if selection == square {
+          deselect()
+        } else {
+          selection = square
+        }
+      } else if let plays = plays[square] {
+        if plays.count > 1 {
+          promotions = plays
+          isPromotionCapture = piece != nil
+          showPromotionDialog = true
+        } else {
+          play(plays.first!, isCapture: piece != nil)
+        }
+      } else {
+        deselect()
+        SoundManager.shared.playButtonPressShort()
+      }
+    }
+
     return Color((i + j) % 2 == 0 ? .white : Color(white: 0.81))
       .frame(width: scale, height: scale)
       .overlay {
         piece?.image.resizable()
       }
-      .modifier(PressAction {
-        guard case let .toMove(toMove) = game.status else {
-          return
-        }
-
-        if let piece, piece.color == toMove, !game.board.moves(from: square).isEmpty {
-          if selection == square {
-            deselect()
-          } else {
-            selection = square
-          }
-        } else if let plays = plays[square] {
-          if plays.count > 1 {
-            promotions = plays
-            isPromotionCapture = piece != nil
-            showPromotionDialog = true
-          } else {
-            play(plays.first!, isCapture: piece != nil)
-          }
-        } else {
-          deselect()
-          SoundManager.shared.playButtonPressShort()
-        }
-      })
+      .modifier(PressAction(onPress: press))
+      .accessibilityElement()
+      .accessibilityIdentifier(square.description)
+      .accessibilityLabel(square.description)
+      .accessibilityAddTraits(.isButton)
+      .accessibilityAction { press() }
       .overlay {
         if plays.keys.contains(square) {
           if piece != nil {

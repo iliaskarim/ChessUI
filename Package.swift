@@ -36,6 +36,7 @@ let package = Package(
     .testTarget(
       name: "ChessUITests",
       dependencies: [
+        "ChessCore",
         "ChessUI",
         .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
       ]

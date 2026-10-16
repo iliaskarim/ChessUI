@@ -33,8 +33,8 @@ final class SoundManager {
     play("Pop 7 by DSG", ext: "flac")
   }
 
-  func playTrumpetFanfare() {
-    play("Trumpet Fanfare by Bevibeldesign", ext: "aiff")
+  func playTrumpetFanfare(delay: TimeInterval = 0) {
+    play("Trumpet Fanfare by Bevibeldesign", ext: "aiff", delay: delay)
   }
 
   func playWahWahSadTrombone() {
@@ -48,8 +48,13 @@ final class SoundManager {
   @discardableResult
   func playMove(_ move: Move, status: Game.Status, boardStatus: Board.Status?, isCapture: Bool) -> String {
     switch status {
-    case .winner:
-      playTrumpetFanfare()
+    case let .winner(_, isByResignation):
+      // The check tick is a short sound at the start of its file. Let it finish
+      // before the fanfare, which would otherwise cover it.
+      if !isByResignation {
+        playHitmarkerSoundEffect()
+      }
+      playTrumpetFanfare(delay: isByResignation ? 0 : 0.2)
       return "trumpet"
 
     case .draw:
@@ -75,9 +80,9 @@ final class SoundManager {
 
   private init() {}
 
-  private var player: AVAudioPlayer?
+  private var players: [AVAudioPlayer] = []
 
-  private func play(_ name: String, ext: String, volume: Float = 1) {
+  private func play(_ name: String, ext: String, volume: Float = 1, delay: TimeInterval = 0) {
     let url =
       Bundle.module.url(forResource: name, withExtension: ext)
         ?? Bundle.module.url(forResource: name, withExtension: ext, subdirectory: "Sounds")
@@ -94,10 +99,17 @@ final class SoundManager {
     configureSessionToMixWithOtherAudio()
 
     do {
-      player = try AVAudioPlayer(contentsOf: url)
-      player?.volume = volume
-      player?.prepareToPlay()
-      player?.play()
+      let player = try AVAudioPlayer(contentsOf: url)
+      player.volume = volume
+      player.prepareToPlay()
+      if delay > 0 {
+        player.play(atTime: player.deviceCurrentTime + delay)
+      } else {
+        player.play()
+      }
+      // A scheduled player is not playing yet, so keep it until it has started and finished.
+      players.removeAll { !$0.isPlaying && $0.currentTime > 0 }
+      players.append(player)
     } catch {
       print("Failed to play sound: \(error)")
     }

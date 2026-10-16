@@ -27,15 +27,19 @@ struct ChessBoard: View {
       Button("Promote pawn to queen") {
         promote(to: .queen)
       }
+      .accessibilityIdentifier("promotion-queen")
       Button("Promote pawn to bishop") {
         promote(to: .bishop)
       }
+      .accessibilityIdentifier("promotion-bishop")
       Button("Promote pawn to knight") {
         promote(to: .knight)
       }
+      .accessibilityIdentifier("promotion-knight")
       Button("Promote pawn to rook") {
         promote(to: .rook)
       }
+      .accessibilityIdentifier("promotion-rook")
     }
 #if os(macOS)
     .background {

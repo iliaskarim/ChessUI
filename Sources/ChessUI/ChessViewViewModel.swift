@@ -66,20 +66,64 @@ final class ChessViewViewModel: ObservableObject {
 #if os(iOS)
       let square = origin(of: move)
       let selected = square.map { activateAccessibilityElement($0.description) } ?? false
-#endif
       try? await Task.sleep(for: .milliseconds(1000))
-#if os(iOS)
-      if selected, let square {
-        activateAccessibilityElement(square.description)
+      if selected, let target = targetSquare(of: move) {
+        activateAccessibilityElement(target.description)
+        if let choice = promotionChoice(of: move) {
+          // Leave the menu on screen, then pick the piece through its button.
+          try? await Task.sleep(for: .milliseconds(1000))
+          activateAccessibilityElement(choice.identifier, label: choice.label)
+        }
       }
-#endif
+#else
+      try? await Task.sleep(for: .milliseconds(1000))
       play(move)
+#endif
       try? await Task.sleep(for: .milliseconds(1200))
     }
     return true
   }
 
 #if os(iOS)
+  private func targetSquare(of move: Move) -> Square? {
+    switch move {
+    case let .translation(translation):
+      return translation.targetSquare
+
+    case let .castling(castling):
+      guard case let .toMove(color) = game.status else {
+        return nil
+      }
+
+      let rank: Square.Rank = color == .white ? .one : .eight
+      let file: Square.File = castling == .kingside ? .g : .c
+      return Square(file: file, rank: rank)
+    }
+  }
+
+  private func promotionChoice(of move: Move) -> (identifier: String, label: String)? {
+    guard case let .translation(translation) = move, let promotion = translation.promotion else {
+      return nil
+    }
+
+    switch promotion {
+    case .queen:
+      return ("promotion-queen", "Promote pawn to queen")
+
+    case .rook:
+      return ("promotion-rook", "Promote pawn to rook")
+
+    case .bishop:
+      return ("promotion-bishop", "Promote pawn to bishop")
+
+    case .knight:
+      return ("promotion-knight", "Promote pawn to knight")
+
+    case .king, .pawn:
+      return nil
+    }
+  }
+
   private func origin(of move: Move) -> Square? {
     var match: Square?
     for file in Square.File.allCases {

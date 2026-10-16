@@ -80,7 +80,13 @@ final class SoundManager {
 
   private init() {}
 
-  private var players: [AVAudioPlayer] = []
+  private struct ActivePlayer {
+    let player: AVAudioPlayer
+    /// Device clock time when playback is scheduled to begin.
+    let startsAt: TimeInterval
+  }
+
+  private var players: [ActivePlayer] = []
 
   private func play(_ name: String, ext: String, volume: Float = 1, delay: TimeInterval = 0) {
     let url =
@@ -102,14 +108,22 @@ final class SoundManager {
       let player = try AVAudioPlayer(contentsOf: url)
       player.volume = volume
       player.prepareToPlay()
+      let startsAt: TimeInterval
       if delay > 0 {
-        player.play(atTime: player.deviceCurrentTime + delay)
+        startsAt = player.deviceCurrentTime + delay
+        player.play(atTime: startsAt)
       } else {
+        startsAt = player.deviceCurrentTime
         player.play()
       }
-      // A scheduled player is not playing yet, so keep it until it has started and finished.
-      players.removeAll { !$0.isPlaying && $0.currentTime > 0 }
-      players.append(player)
+      // currentTime is 0 before a scheduled sound starts and 0 again after it
+      // finishes, so it cannot tell those apart. Hold the player until the
+      // device clock reaches startsAt and playback has stopped.
+      let now = player.deviceCurrentTime
+      players.removeAll { active in
+        now >= active.startsAt && !active.player.isPlaying
+      }
+      players.append(ActivePlayer(player: player, startsAt: startsAt))
     } catch {
       print("Failed to play sound: \(error)")
     }

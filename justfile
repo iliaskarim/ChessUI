@@ -28,6 +28,10 @@ capture replay="":
       scripts/capture-replay "$name"
     done
 
+# Crop scholars-mate.mov to a square around the chess UI and write a GIF.
+crop-scholars-mate:
+    scripts/crop-scholars-mate
+
 # Re-record snapshots (`failed`, or `all`). The run fails on purpose; then run `just test`.
 record mode="failed":
     #!/usr/bin/env zsh

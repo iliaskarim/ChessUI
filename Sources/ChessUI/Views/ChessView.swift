@@ -81,6 +81,11 @@ public struct ChessView: View {
     }
     .fixedSize(horizontal: true, vertical: false)
     .padding()
+    .task {
+      if await viewModel.runReplay(replay) {
+        writeReplayMarker()
+      }
+    }
   }
 
   @StateObject private var viewModel = ChessViewViewModel()
@@ -89,7 +94,32 @@ public struct ChessView: View {
 
   @State private var showMenuDialog = false
 
+  private var replay: [Move] {
+    let arguments = ProcessInfo.processInfo.arguments
+    if arguments.contains("loyd-stalemate") {
+      return LoydStalemate.moves
+    }
+    if arguments.contains("fools-mate") {
+      return FoolsMate.moves
+    }
+    if arguments.contains("scholars-mate") {
+      return ScholarsMate.moves
+    }
+    return []
+  }
+
   public init() {}
+
+  private func writeReplayMarker() {
+    let url = FileManager.default
+      .urls(for: .documentDirectory, in: .userDomainMask)[0]
+      .appendingPathComponent("replay-done")
+    do {
+      try Data("done".utf8).write(to: url, options: .atomic)
+    } catch {
+      print("Failed to write replay marker: \(error)")
+    }
+  }
 }
 
 #Preview {

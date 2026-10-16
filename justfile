@@ -15,6 +15,19 @@ test only="ChessUITests":
       -only-testing:{{ only }} \
       -skipPackagePluginValidation
 
+# Record replays on the iPhone simulator. Pass a name to record one: `just capture scholars-mate`.
+capture replay="":
+    #!/usr/bin/env zsh
+    set -euo pipefail
+    if [[ -z "{{ replay }}" ]]; then
+      replays=(fools-mate scholars-mate loyd-stalemate)
+    else
+      replays=("{{ replay }}")
+    fi
+    for name in "${replays[@]}"; do
+      scripts/capture-replay "$name"
+    done
+
 # Re-record snapshots (`failed`, or `all`). The run fails on purpose; then run `just test`.
 record mode="failed":
     #!/usr/bin/env zsh

@@ -1,0 +1,296 @@
+#!/usr/bin/env zsh
+# Build the demo, play a scripted game, and save a simulator recording.
+#
+# simctl recordVideo has no audio track. The demo writes the sounds it actually
+# plays to Documents/replay-audio.caf, and this script muxes that file on.
+#
+# Usage: scripts/capture-replay fools-mate|scholars-mate|loyd-stalemate
+set -euo pipefail
+
+replay="${1:-}"
+case "$replay" in
+  fools-mate|scholars-mate|loyd-stalemate) ;;
+  *)
+    print -u2 "Usage: scripts/capture-replay fools-mate|scholars-mate|loyd-stalemate"
+    exit 1
+    ;;
+esac
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$root"
+
+dest="$(just --quiet --justfile "$root/justfile" _destination)"
+id="${dest##*,id=}"
+if [[ "$id" == "$dest" || -z "$id" ]]; then
+  print -u2 "Could not read a simulator id from: $dest"
+  exit 1
+fi
+
+bundle_id="com.iliaskarim.ChessUIDemo"
+out="$root/build/${replay}.mov"
+final="$root/${replay}.mov"
+record_log="$root/build/${replay}-record.log"
+derived="$root/build/DerivedData"
+mkdir -p "$root/build"
+rm -f "$out" "$final" "$record_log"
+
+print -r -- "Building ChessUIDemo for $id"
+xcodebuild build \
+  -project "$root/ChessUIDemo/ChessUIDemo.xcodeproj" \
+  -scheme ChessUIDemo \
+  -configuration Debug \
+  -destination "$dest" \
+  -derivedDataPath "$derived" \
+  -skipPackagePluginValidation
+
+app=""
+# `path` is tied to PATH in zsh, so this loop variable must not use that name.
+while IFS= read -r built; do
+  app="$built"
+  break
+done < <(find "$derived" -path '*/Debug-iphonesimulator/ChessUIDemo.app' -type d)
+if [[ -z "$app" ]]; then
+  print -u2 "ChessUIDemo.app was not built."
+  exit 1
+fi
+
+/usr/bin/xcrun simctl boot "$id" >/dev/null 2>&1 || true
+/usr/bin/xcrun simctl bootstatus "$id" -b >/dev/null
+/usr/bin/xcrun simctl install "$id" "$app"
+/usr/bin/xcrun simctl terminate "$id" "$bundle_id" >/dev/null 2>&1 || true
+
+container="$(/usr/bin/xcrun simctl get_app_container "$id" "$bundle_id" data 2>/dev/null || true)"
+if [[ -n "$container" ]]; then
+  rm -f "$container/Documents/replay-done" \
+    "$container/Documents/replay-audio.caf" \
+    "$container/Documents/replay-audio-start"
+fi
+
+script_pid=""
+stop_recording() {
+  if [[ -z "$script_pid" ]]; then
+    return
+  fi
+  if ! kill -0 "$script_pid" 2>/dev/null; then
+    script_pid=""
+    return
+  fi
+
+  local child
+  child="$(pgrep -P "$script_pid" | head -n 1 || true)"
+  if [[ -n "$child" ]]; then
+    kill -INT "$child" 2>/dev/null || true
+  else
+    kill -INT "$script_pid" 2>/dev/null || true
+  fi
+  wait "$script_pid" 2>/dev/null || true
+  script_pid=""
+}
+trap stop_recording EXIT
+
+# -t 0 flushes the typescript so "Recording started" shows up while simctl is running.
+script -q -F -t 0 "$record_log" \
+  /usr/bin/xcrun simctl io "$id" recordVideo --codec=h264 --force "$out" &
+script_pid=$!
+
+started=0
+for _ in {1..200}; do
+  if [[ -f "$record_log" ]] && grep -q "Recording started" "$record_log"; then
+    started=1
+    break
+  fi
+  if ! kill -0 "$script_pid" 2>/dev/null; then
+    print -u2 "Simulator recording stopped before it started."
+    cat "$record_log" >&2 || true
+    exit 1
+  fi
+  sleep 0.05
+done
+if (( !started )); then
+  print -u2 "Timed out waiting for the simulator recording to start."
+  cat "$record_log" >&2 || true
+  exit 1
+fi
+
+record_start="$(python3 -c 'import time; print(f"{time.time():.6f}")')"
+/usr/bin/xcrun simctl launch --terminate-running-process "$id" "$bundle_id" "$replay" >/dev/null
+
+deadline=$((SECONDS + 120))
+marker=""
+while (( SECONDS < deadline )); do
+  if [[ -z "$container" ]]; then
+    container="$(/usr/bin/xcrun simctl get_app_container "$id" "$bundle_id" data 2>/dev/null || true)"
+  fi
+  if [[ -n "$container" && -f "$container/Documents/replay-done" ]]; then
+    marker="$container/Documents/replay-done"
+    break
+  fi
+  sleep 0.05
+done
+
+if [[ -z "$marker" ]]; then
+  print -u2 "$replay replay did not finish."
+  exit 1
+fi
+
+stop_recording
+/usr/bin/xcrun simctl terminate "$id" "$bundle_id" >/dev/null 2>&1 || true
+
+audio="$container/Documents/replay-audio.caf"
+stamp="$container/Documents/replay-audio-start"
+if [[ ! -s "$audio" || ! -s "$stamp" ]]; then
+  print -u2 "Replay audio was not written."
+  exit 1
+fi
+
+audio_start="$(tr -d '[:space:]' < "$stamp")"
+offset="$(python3 -c "print(max(0, $audio_start - $record_start))")"
+delay="$(python3 -c "print(int(round($offset * 1000)))")"
+duration="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$out")"
+audio_duration="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$audio")"
+# An extra second so the soundtrack can be nudged onto the move frames and still finish.
+pad="$(python3 -c "print(max(0, $offset + $audio_duration - $duration) + 1)")"
+raw_frames="$(ffprobe -v error -select_streams v -count_frames -show_entries stream=nb_read_frames -of csv=p=0 "$out")"
+
+raw="$out.raw.mov"
+mv "$out" "$raw"
+mixed="$out.tmp.mov"
+filter="[1:a]adelay=${delay}:all=1[a]"
+video_map="0:v"
+if python3 -c "import sys; sys.exit(0 if float('$pad') > 0.05 else 1)"; then
+  filter="[0:v]tpad=stop_mode=clone:stop_duration=${pad}[v];${filter}"
+  video_map="[v]"
+fi
+ffmpeg -y -fflags +igndts+genpts -i "$raw" -i "$audio" \
+  -filter_complex "$filter" \
+  -map "$video_map" -map "[a]" \
+  -fps_mode passthrough \
+  -c:v libx264 -pix_fmt yuv420p -crf 18 -c:a aac -b:a 192k \
+  "$mixed"
+mv "$mixed" "$out"
+out_frames="$(ffprobe -v error -select_streams v -count_frames -show_entries stream=nb_read_frames -of csv=p=0 "$out")"
+if (( out_frames + 2 < raw_frames )); then
+  print -u2 "Mux dropped video frames ($raw_frames -> $out_frames)."
+  exit 1
+fi
+
+# simctl's frames land a little after the move is played. Slide the soundtrack
+# onto those frames. Times come from silence_end, which is when each sound starts.
+sound_times="$(ffmpeg -i "$audio" -af silencedetect=noise=-30dB:d=0.15 -f null - 2>&1 \
+  | sed -n 's/.*silence_end: \([0-9.][0-9.]*\).*/\1/p' \
+  | tr '\n' ' ')"
+audio_duration="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$audio")"
+lead="$(python3 - "$out" "$offset" "$audio_duration" ${=sound_times} <<'PY'
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+try:
+    from PIL import Image
+except ImportError:
+    print("0")
+    raise SystemExit
+
+mov, offset, duration, *sound_args = sys.argv[1:]
+sounds = []
+earlier = None
+duration = float(duration)
+for time in sound_args:
+    if not time.strip():
+        continue
+    moment = float(time)
+    # A silence that runs to the end of the file is the tail, not another move.
+    if duration - moment < 0.08:
+        continue
+    start = float(offset) + moment
+    gap = None if earlier is None else start - earlier
+    earlier = start
+    # The check tick is followed immediately by the fanfare. Line the fanfare up
+    # with the move. The trombone's own gaps are closer together than two moves.
+    if gap is not None and gap < 0.5:
+        sounds[-1] = start
+        continue
+    if gap is not None and (gap < 1.6 or gap > 4):
+        continue
+    sounds.append(start)
+if not sounds:
+    print("0")
+    raise SystemExit
+
+frames = Path(tempfile.mkdtemp())
+subprocess.check_call(
+    [
+        "ffmpeg", "-y", "-i", mov, "-vf", "fps=8,scale=180:-1",
+        "-start_number", "0", str(frames / "f%04d.jpg"),
+    ],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+
+previous = None
+changes = []
+for index, path in enumerate(sorted(frames.glob("*.jpg"))):
+    time = index / 8
+    image = Image.open(path).convert("L")
+    width, height = image.size
+    crop = image.crop((
+        int(width * 0.33),
+        int(height * 0.42),
+        int(width * 0.83),
+        int(height * 0.70),
+    ))
+    if previous is not None and time >= 2.5:
+        left, right = previous.load(), crop.load()
+        changed = 0
+        crop_width, crop_height = crop.size
+        for y in range(crop_height):
+            for x in range(crop_width):
+                if abs(int(left[x, y]) - int(right[x, y])) > 30:
+                    changed += 1
+        if changed > 50:
+            if not changes or time - changes[-1][0] >= 0.4:
+                changes.append((time, changed))
+    previous = crop
+
+# Dots appear a second before the move. The move frame is the change beside the sound.
+matched = []
+for sound in sounds:
+    window = [item for item in changes if -0.15 <= item[0] - sound <= 0.7]
+    if not window:
+        continue
+    visual = max(window, key=lambda item: item[1])[0]
+    matched.append(visual - sound)
+if len(matched) < max(3, len(sounds) // 2):
+    print("0")
+    raise SystemExit
+if any(abs(amount) > 1.2 for amount in matched):
+    print("0")
+else:
+    print(sorted(matched)[len(matched) // 2])
+PY
+)"
+print -r -- "Audio lead ${lead}s"
+adjusted="$(python3 -c "print(max(0, $offset + $lead))")"
+delay="$(python3 -c "print(int(round($adjusted * 1000)))")"
+if python3 -c "import sys; sys.exit(0 if abs(float('$lead')) > 0.08 else 1)"; then
+  shifted="$out.shift.mov"
+  ffmpeg -y -i "$out" -i "$audio" \
+    -filter_complex "[1:a]adelay=${delay}:all=1[a]" \
+    -map 0:v -map "[a]" \
+    -c:v copy -c:a aac -b:a 192k \
+    "$shifted"
+  mv "$shifted" "$out"
+fi
+rm -f "$raw"
+# Recording starts before the app is open, so the first 2 seconds are the simulator launching it.
+trimmed="$out.trim.mov"
+ffmpeg -y -i "$out" \
+  -filter_complex "[0:v]trim=start=2,setpts=PTS-STARTPTS[v];[0:a]atrim=start=2,asetpts=PTS-STARTPTS[a]" \
+  -map "[v]" -map "[a]" \
+  -fps_mode passthrough \
+  -c:v libx264 -pix_fmt yuv420p -crf 18 -c:a aac -b:a 192k \
+  "$trimmed"
+mv "$trimmed" "$out"
+mv "$out" "$final"
+print -r -- "Wrote $final"

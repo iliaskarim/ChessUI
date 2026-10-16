@@ -103,6 +103,7 @@ final class SoundManager {
     }
 
     configureSessionToMixWithOtherAudio()
+    ReplayRecorder.shared.mix(url: url, volume: volume, delay: delay)
 
     do {
       let player = try AVAudioPlayer(contentsOf: url)

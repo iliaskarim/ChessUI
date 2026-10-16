@@ -1,4 +1,5 @@
 import AVFAudio
+import ChessCore
 
 @MainActor
 final class SoundManager {
@@ -9,7 +10,7 @@ final class SoundManager {
   }
 
   func playHitmarkerSoundEffect() {
-    play("Hitmarker Sound Effect by aruscio28", ext: "mp3", volume: 0.1)
+    play("Hitmarker Sound Effect by aruscio28", ext: "mp3")
   }
 
   func playKeypresssLoud() {
@@ -42,6 +43,27 @@ final class SoundManager {
 
   func playWhoosh() {
     play("Whoosh by qubodup", ext: "flac")
+  }
+
+  func playMove(_ move: Move, status: Game.Status, boardStatus: Board.Status?, isCapture: Bool) {
+    switch status {
+    case .winner:
+      playTrumpetFanfare()
+
+    case .draw:
+      playWahWahSadTrombone()
+
+    case .toMove:
+      if boardStatus != nil {
+        playHitmarkerSoundEffect()
+      } else if case .castling = move {
+        playPop7()
+      } else if isCapture {
+        playPop5()
+      } else {
+        playPop3()
+      }
+    }
   }
 
   private init() {}

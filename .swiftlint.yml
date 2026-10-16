@@ -56,3 +56,4 @@ non_optional_string_data_conversion:
 
 excluded:
   - .build
+  - build

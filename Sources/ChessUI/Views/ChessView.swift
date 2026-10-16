@@ -120,6 +120,7 @@ private struct BoardVerticalShift: ViewModifier {
   }
 }
 
+#if os(iOS)
 private struct DeselectHoleKey: PreferenceKey {
   static var defaultValue: Anchor<CGRect>?
 
@@ -127,6 +128,7 @@ private struct DeselectHoleKey: PreferenceKey {
     value = nextValue() ?? value
   }
 }
+#endif
 
 private struct ChessPieceBackgroundDeselectModifier: ViewModifier {
   var verticalShift: CGFloat = 0

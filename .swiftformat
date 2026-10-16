@@ -1,4 +1,5 @@
 --swiftversion 6.0
+--exclude build
 --disable blankLinesAroundMark
 --disable preferForLoop
 # Keep @Test method names with a test… prefix (project convention).

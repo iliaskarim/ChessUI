@@ -11,4 +11,8 @@ final class ChessUITests: XCTestCase {
   func testChessUIDarkMode() throws {
     try assertSnapshot(ChessView(), colorScheme: .dark)
   }
+
+  func testDeselectChessPieceOnBackgroundTap() {
+    _ = ChessView().deselectChessPieceOnBackgroundTap(verticalShift: 0)
+  }
 }

@@ -41,9 +41,26 @@ lint:
     swiftlint lint --fix .
     swiftformat .
 
-# SwiftLint analyze (`scripts/swiftlint-analyze`: clean build-for-testing + analyze).
-analyze:
-    bash scripts/swiftlint-analyze
+# SwiftLint analyze on macOS and iOS. Pass one platform: `just analyze iOS`.
+analyze platform="":
+    #!/usr/bin/env zsh
+    set -euo pipefail
+    case "{{ platform }}" in
+      "")
+        bash scripts/swiftlint-analyze
+        ;;
+      macOS)
+        bash scripts/swiftlint-analyze --destination platform=macOS
+        ;;
+      iOS)
+        dest="$({{ just_executable() }} --quiet --justfile {{ justfile() }} _destination)"
+        bash scripts/swiftlint-analyze --destination "$dest"
+        ;;
+      *)
+        print -u2 "platform must be macOS or iOS"
+        exit 1
+        ;;
+    esac
 
 # Use DESTINATION if set, otherwise a booted iPhone, otherwise an iPhone 17.
 [private]

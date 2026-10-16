@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
-# Clean-build ChessUI and run SwiftLint analyzer rules.
+# Clean-build ChessUI for macOS and iOS, then run SwiftLint analyzer rules.
 #
 # Analyzer rules need a compiler log. `swiftlint lint` does not run them.
 # A cached build can succeed without compiling Swift, so analyze reports
 # 0 files. `clean` forces every Swift file into the log.
+#
+# SwiftLint takes one log per invocation, and the index store for a
+# platform is only valid until the next `clean`. Analyze each platform
+# immediately after its build.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 SCHEME="ChessUI"
-DESTINATION="platform=macOS"
+# `just test` uses DESTINATION for the simulator. Keep that for the iOS
+# leg; `--destination` below is a single-platform override.
+IOS_DESTINATION="${DESTINATION:-}"
+DESTINATION=""
 CONFIG=".swiftlint.yml"
 DEFAULT_LOG="build/xcodebuild.log"
 COMPILER_LOG=""
@@ -21,8 +28,11 @@ usage() {
 Usage:
   swiftlint-analyze [options]
 
-Runs `xcodebuild clean build-for-testing` for the ChessUI scheme and
-then `swiftlint analyze` on Sources and Tests.
+Runs `xcodebuild clean build-for-testing` for macOS and for an iPhone
+simulator, then `swiftlint analyze` on Sources and Tests for each log.
+
+iOS uses DESTINATION if set, otherwise a booted iPhone, otherwise an
+iPhone 17.
 
 Must be run on a Mac with Xcode and `swiftlint` on PATH.
 
@@ -31,7 +41,7 @@ can succeed while skipping Swift compile, so analyze reports 0 files.
 
 Options:
   --compiler-log-path PATH  Skip xcodebuild; analyze this log
-  --destination DEST        xcodebuild -destination (default: platform=macOS)
+  --destination DEST        Analyze only this xcodebuild destination
   --scheme NAME             xcodebuild -scheme (default: ChessUI)
   --dry-run                 Print the xcodebuild and analyze commands
   -h, --help                Show this help
@@ -89,8 +99,26 @@ run_xcodebuild() {
       tail -n 80 "$log_path" >&2 || true
     fi
     echo "Full log: ${log_path}" >&2
-    exit 1
+    return 1
   fi
+}
+
+# Same simulator choice as `just test`: DESTINATION, else a booted iPhone,
+# else an available iPhone 17.
+ios_destination() {
+  if [[ -n "$IOS_DESTINATION" ]]; then
+    printf '%s\n' "$IOS_DESTINATION"
+    return
+  fi
+  local id
+  id="$(xcrun simctl list devices booted | awk -F '[()]' '/iPhone/ { print $2; exit }')"
+  if [[ -z "$id" ]]; then
+    id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 17 \(/ { id=$2 } END { print id }')"
+  fi
+  if [[ -z "$id" ]]; then
+    die "No iPhone simulator found. Set DESTINATION to an xcodebuild destination."
+  fi
+  printf '%s\n' "platform=iOS Simulator,id=$id"
 }
 
 print_or_run() {
@@ -134,34 +162,66 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   [[ -f "$CONFIG" ]] || die "missing $CONFIG"
 fi
 
-analyze_args=(
-  analyze
-  --config "$CONFIG"
-  --compiler-log-path "$COMPILER_LOG"
-  Sources
-  Tests
-)
+analyze_log() {
+  local log_path="$1"
+  print_or_run swiftlint analyze \
+    --config "$CONFIG" \
+    --compiler-log-path "$log_path" \
+    Sources \
+    Tests
+}
 
 if [[ "$SKIP_BUILD" -eq 1 ]]; then
   echo "Analyzing $COMPILER_LOG (skipped xcodebuild)" >&2
-  print_or_run swiftlint "${analyze_args[@]}"
+  analyze_log "$COMPILER_LOG"
   exit 0
 fi
 
-echo "Building $SCHEME (clean build-for-testing) → $COMPILER_LOG" >&2
-if [[ "$DRY_RUN" -eq 1 ]]; then
-  print_or_run xcodebuild \
-    -scheme "$SCHEME" \
-    -destination "$DESTINATION" \
-    clean build-for-testing
-  print_or_run swiftlint "${analyze_args[@]}"
-  exit 0
+# label, xcodebuild destination, compiler log
+platforms=()
+if [[ -n "$DESTINATION" ]]; then
+  platforms+=("custom" "$DESTINATION" "$DEFAULT_LOG")
+else
+  platforms+=(
+    "macOS" "platform=macOS" "build/xcodebuild-macos.log"
+    "iOS" "$(ios_destination)" "build/xcodebuild-ios.log"
+  )
 fi
+
+exit_code=0
+note_failure() {
+  local code="$1"
+  if [[ "$exit_code" -eq 0 ]]; then
+    exit_code="$code"
+  fi
+}
 
 mkdir -p build
-run_xcodebuild "$COMPILER_LOG" \
-  -scheme "$SCHEME" \
-  -destination "$DESTINATION" \
-  clean build-for-testing
+for ((i = 0; i < ${#platforms[@]}; i += 3)); do
+  label="${platforms[i]}"
+  destination="${platforms[i + 1]}"
+  log_path="${platforms[i + 2]}"
 
-print_or_run swiftlint "${analyze_args[@]}"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    print_or_run xcodebuild \
+      -scheme "$SCHEME" \
+      -destination "$destination" \
+      clean build-for-testing
+    analyze_log "$log_path"
+    continue
+  fi
+
+  echo "Building $SCHEME for $label (clean build-for-testing) → $log_path" >&2
+  if ! run_xcodebuild "$log_path" \
+    -scheme "$SCHEME" \
+    -destination "$destination" \
+    clean build-for-testing; then
+    note_failure 1
+    continue
+  fi
+
+  echo "Analyzing $label ($log_path)" >&2
+  analyze_log "$log_path" || note_failure "$?"
+done
+
+exit "$exit_code"

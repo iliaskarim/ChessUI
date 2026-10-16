@@ -3,6 +3,8 @@ import SwiftUI
 
 struct ChessBoard: View {
   var body: some View {
+    let plays = activePlays
+
     HStack(spacing: 0) {
       // RANK LABELS
       if isBoardLabeled {
@@ -14,7 +16,7 @@ struct ChessBoard: View {
         ForEach(0 ..< 8) { i in
           HStack(spacing: 0) {
             ForEach(0 ..< 8) { j in
-              square(i: i, j: j)
+              square(i: i, j: j, plays: plays)
             }
           }
         }
@@ -96,8 +98,6 @@ struct ChessBoard: View {
 
   @State private var promotions: [Move]?
 
-  @State private var plays: [Square: [Move]]?
-
   private var rankLabels: some View {
     VStack(alignment: .trailing, spacing: 0) {
       ForEach(
@@ -118,15 +118,15 @@ struct ChessBoard: View {
 
   @State private var showPromotionDialog = false
 
-  @State private var selection: Square? {
-    didSet {
-      plays = switch selection {
-      case let .some(square):
-        game.board.moves(from: square)
+  @State private var selection: Square?
 
-      case .none:
-        [:]
-      }
+  private var activePlays: [Square: [Move]] {
+    switch selection {
+    case let .some(square):
+      game.board.moves(from: square)
+
+    case .none:
+      [:]
     }
   }
 
@@ -151,7 +151,7 @@ struct ChessBoard: View {
     selection = nil
   }
 
-  private func square(i: Int, j: Int) -> some View {
+  private func square(i: Int, j: Int, plays: [Square: [Move]]) -> some View {
     let file: Square.File = isBoardFlipped ? .allCases[7 - j] : .allCases[j]
     let rank: Square.Rank = isBoardFlipped ? .allCases[i] : .allCases[7 - i]
     let square = Square(file: file, rank: rank)
@@ -173,7 +173,7 @@ struct ChessBoard: View {
           } else {
             selection = square
           }
-        } else if let plays = plays?[square] {
+        } else if let plays = plays[square] {
           if plays.count > 1 {
             promotions = plays
             isPromotionCapture = piece != nil
@@ -187,7 +187,7 @@ struct ChessBoard: View {
         }
       })
       .overlay {
-        if let plays, plays.keys.contains(square) {
+        if plays.keys.contains(square) {
           if piece != nil {
             Rectangle()
               .stroke(.black, lineWidth: 1.0)
@@ -196,7 +196,7 @@ struct ChessBoard: View {
           } else {
             Circle()
               .fill(.black)
-              .frame(width: 3.0)
+              .frame(width: 2.0)
           }
         }
       }

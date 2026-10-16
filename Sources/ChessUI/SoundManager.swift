@@ -45,23 +45,30 @@ final class SoundManager {
     play("Whoosh by qubodup", ext: "flac")
   }
 
-  func playMove(_ move: Move, status: Game.Status, boardStatus: Board.Status?, isCapture: Bool) {
+  @discardableResult
+  func playMove(_ move: Move, status: Game.Status, boardStatus: Board.Status?, isCapture: Bool) -> String {
     switch status {
     case .winner:
       playTrumpetFanfare()
+      return "trumpet"
 
     case .draw:
       playWahWahSadTrombone()
+      return "trombone"
 
     case .toMove:
       if boardStatus != nil {
         playHitmarkerSoundEffect()
+        return "hitmarker"
       } else if case .castling = move {
         playPop7()
+        return "pop7"
       } else if isCapture {
         playPop5()
+        return "pop5"
       } else {
         playPop3()
+        return "pop3"
       }
     }
   }

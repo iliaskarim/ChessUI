@@ -112,6 +112,8 @@ struct ChessBoard: View {
 
   private let scale = 30.0
 
+  private let selectedPieceScale = 1.1
+
   @State private var showPromotionDialog = false
 
   @State private var selection: Square?
@@ -157,9 +159,42 @@ struct ChessBoard: View {
         }
       }
     }
+    // Drawn above the squares so the lift isn't covered by a neighboring square.
+    .overlay(alignment: .topLeading) {
+      liftedPiece
+    }
 #if os(macOS)
     .modifier(BoardCrosshairCursorModifier(isPieceSelected: selection != nil))
 #endif
+  }
+
+  @ViewBuilder private var liftedPiece: some View {
+    if let selection, let piece = game.board[selection] {
+      let side = scale * selectedPieceScale
+      piece.image
+        .resizable()
+        .frame(width: side, height: side)
+        .shadow(color: .black.opacity(0.45), radius: 1.5, y: 1)
+        .offset(liftedPieceOffset(for: selection, side: side))
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+  }
+
+  private func liftedPieceOffset(for square: Square, side: CGFloat) -> CGSize {
+    let center = squareCenter(square)
+    return CGSize(width: center.x - side / 2, height: center.y - side / 2)
+  }
+
+  private func squareCenter(_ square: Square) -> CGPoint {
+    let fileIndex = square.file.rawValue - 1
+    let rankIndex = square.rank.rawValue - 1
+    let column = isBoardFlipped ? 7 - fileIndex : fileIndex
+    let row = isBoardFlipped ? rankIndex : 7 - rankIndex
+    return CGPoint(
+      x: (CGFloat(column) + 0.5) * scale,
+      y: (CGFloat(row) + 0.5) * scale
+    )
   }
 
   private func square(i: Int, j: Int, plays: [Square: [Move]]) -> some View {
@@ -193,16 +228,20 @@ struct ChessBoard: View {
       }
     }
 
+    let isSelected = selection == square
+
     return Color((i + j) % 2 == 0 ? .white : Color(white: 0.81))
       .frame(width: scale, height: scale)
       .overlay {
-        piece?.image.resizable()
+        if !isSelected {
+          piece?.image.resizable()
+        }
       }
       .modifier(PressAction(onPress: press))
       .accessibilityElement()
       .accessibilityIdentifier(square.description)
       .accessibilityLabel(square.description)
-      .accessibilityAddTraits(.isButton)
+      .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
       .accessibilityAction { press() }
       .overlay {
         if plays.keys.contains(square) {

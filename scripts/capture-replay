@@ -4,14 +4,14 @@
 # simctl recordVideo has no audio track. The demo writes the sounds it actually
 # plays to Documents/replay-audio.caf, and this script muxes that file on.
 #
-# Usage: scripts/capture-replay fools-mate|scholars-mate|loyd-stalemate
+# Usage: scripts/capture-replay fools-mate|scholars-mate|loyd-stalemate|saavedra
 set -euo pipefail
 
 replay="${1:-}"
 case "$replay" in
-  fools-mate|scholars-mate|loyd-stalemate) ;;
+  fools-mate|scholars-mate|loyd-stalemate|saavedra) ;;
   *)
-    print -u2 "Usage: scripts/capture-replay fools-mate|scholars-mate|loyd-stalemate"
+    print -u2 "Usage: scripts/capture-replay fools-mate|scholars-mate|loyd-stalemate|saavedra"
     exit 1
     ;;
 esac

@@ -82,33 +82,42 @@ public struct ChessView: View {
     .fixedSize(horizontal: true, vertical: false)
     .padding()
     .task {
-      if await viewModel.runReplay(replay) {
+      if await viewModel.runReplay(replayMoves) {
         writeReplayMarker()
       }
     }
   }
 
-  @StateObject private var viewModel = ChessViewViewModel()
+  @StateObject private var viewModel: ChessViewViewModel
 
   @State private var showForfeitDialog = false
 
   @State private var showMenuDialog = false
 
-  private var replay: [Move] {
-    let arguments = ProcessInfo.processInfo.arguments
-    if arguments.contains("loyd-stalemate") {
-      return LoydStalemate.moves
-    }
-    if arguments.contains("fools-mate") {
-      return FoolsMate.moves
-    }
-    if arguments.contains("scholars-mate") {
-      return ScholarsMate.moves
-    }
-    return []
+  private let replayMoves: [Move]
+
+  public init() {
+    let script = Self.replayScript()
+    _viewModel = StateObject(wrappedValue: ChessViewViewModel(game: Game(board: script.board)))
+    replayMoves = script.moves
   }
 
-  public init() {}
+  private static func replayScript() -> (board: Board, moves: [Move]) {
+    let arguments = ProcessInfo.processInfo.arguments
+    if arguments.contains("saavedra") {
+      return (Saavedra.board, Saavedra.moves)
+    }
+    if arguments.contains("loyd-stalemate") {
+      return (.board, LoydStalemate.moves)
+    }
+    if arguments.contains("fools-mate") {
+      return (.board, FoolsMate.moves)
+    }
+    if arguments.contains("scholars-mate") {
+      return (.board, ScholarsMate.moves)
+    }
+    return (.board, [])
+  }
 
   private func writeReplayMarker() {
     let url = FileManager.default

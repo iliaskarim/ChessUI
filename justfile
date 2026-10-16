@@ -20,7 +20,7 @@ capture replay="":
     #!/usr/bin/env zsh
     set -euo pipefail
     if [[ -z "{{ replay }}" ]]; then
-      replays=(fools-mate scholars-mate loyd-stalemate)
+      replays=(fools-mate scholars-mate loyd-stalemate saavedra)
     else
       replays=("{{ replay }}")
     fi
